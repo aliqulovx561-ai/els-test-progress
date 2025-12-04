@@ -5,7 +5,8 @@ import {
     getUnitOverallProgress, 
     generateExerciseQuestions,
     getExerciseButtonClass,
-    getExerciseDisplayName 
+    getExerciseDisplayName,
+    generateGrammarQuestions 
 } from './exercises.js';
 import { sendResultToTelegram, prepareTelegramData } from './telegram.js';
 
@@ -290,9 +291,23 @@ window.startExercise = function(type) {
     isGrandTest = false;
     
     if (type === 'grammar') {
-        // Grammar exercise is already on the page
-        const grammarSection = document.getElementById('grammarSection');
-        grammarSection.scrollIntoView({ behavior: 'smooth' });
+        // Generate grammar questions
+        if (currentUnit.grammarStructure) {
+            exerciseQuestions = generateGrammarQuestions(
+                currentUnit.grammarStructure, 
+                currentUnit.grammarExamples || [],
+                5  // 5 grammar questions
+            );
+            exerciseScore = { correct: 0, wrong: 0 };
+            
+            showCountdown(() => {
+                unitPage.classList.add('hidden');
+                exercisePage.classList.remove('hidden');
+                startExerciseTest();
+            });
+        } else {
+            alert('Grammar exercises are not available for this unit yet.');
+        }
         return;
     }
     
@@ -331,6 +346,8 @@ window.submitGrammarExample = function() {
         0
     );
     
+    telegramData.message += `\n📝 Student's Example: ${userExample}`;
+    
     sendResultToTelegram(telegramData);
     
     alert('Thank you for your example! Grammar exercise completed.');
@@ -340,6 +357,17 @@ window.submitGrammarExample = function() {
     
     // Clear the textarea
     document.getElementById('userGrammarExample').value = '';
+    
+    // Mark grammar button as completed
+    const grammarBtn = document.querySelector('.exercise-btn[onclick*="grammar"]');
+    if (grammarBtn) {
+        grammarBtn.classList.remove('pending', 'partial');
+        grammarBtn.classList.add('completed');
+        grammarBtn.innerHTML = `
+            <span>📚 Grammar Practice</span>
+            <span class="progress-text">100% ✓</span>
+        `;
+    }
 };
 
 // Start exercise test
@@ -358,24 +386,31 @@ function showQuestion() {
 
     const question = exerciseQuestions[currentQuestion];
     resetQuestionUI();
-    const progress = ((currentQuestion + 1) / exerciseQuestions.length) * 100;
     
+    // Calculate progress
+    const progressPercent = ((currentQuestion + 1) / exerciseQuestions.length) * 100;
+    
+    // Update UI
     document.getElementById('questionCounter').textContent = `Question ${currentQuestion + 1} / ${exerciseQuestions.length}`;
-    document.getElementById('exerciseProgress').style.width = progress + '%';
+    document.getElementById('exerciseProgress').style.width = progressPercent + '%';
     document.getElementById('questionText').textContent = question.text;
     
+    // Clear previous options
     const optionsContainer = document.getElementById('optionsContainer');
     optionsContainer.innerHTML = '';
     
-    question.options.forEach(option => {
+    // Create new option buttons
+    question.options.forEach((option, index) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.textContent = option;
+        btn.textContent = `${String.fromCharCode(65 + index)}. ${option}`; // A., B., C., D.
         btn.dataset.value = option;
         btn.onclick = () => checkAnswer(option, question.correct, btn);
         optionsContainer.appendChild(btn);
     });
     
+    // Reset timer
+    questionAnswered = false;
     startTimer();
 }
 
@@ -383,6 +418,8 @@ function showQuestion() {
 function startTimer() {
     let timeLeft = 30;
     const timerEl = document.getElementById('timer');
+    if (!timerEl) return;
+    
     timerEl.textContent = timeLeft + 's';
     timerEl.classList.remove('warning');
     
@@ -401,8 +438,17 @@ function startTimer() {
             if (!questionAnswered) {
                 questionAnswered = true;
                 exerciseScore.wrong++;
-                lockOptionButtons(exerciseQuestions[currentQuestion].correct);
-                displayAnswerFeedback(false, exerciseQuestions[currentQuestion].correct, 'Time is up');
+                
+                // Highlight correct answer
+                const correctAnswer = exerciseQuestions[currentQuestion].correct;
+                const allButtons = document.querySelectorAll('.option-btn');
+                allButtons.forEach(button => {
+                    if (button.dataset.value === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+                
+                displayAnswerFeedback(false, correctAnswer, 'Time is up');
                 enableNextButton();
             }
         }
@@ -414,13 +460,25 @@ function checkAnswer(selected, correct, btn) {
     if (questionAnswered) return;
     clearInterval(exerciseTimer);
     questionAnswered = true;
+    
     const isCorrect = selected === correct;
     if (isCorrect) {
         exerciseScore.correct++;
     } else {
         exerciseScore.wrong++;
     }
-    lockOptionButtons(correct, btn, isCorrect);
+    
+    // Highlight correct and incorrect answers
+    const allButtons = document.querySelectorAll('.option-btn');
+    allButtons.forEach(button => {
+        if (button.dataset.value === correct) {
+            button.classList.add('correct');
+        } else if (button === btn && !isCorrect) {
+            button.classList.add('incorrect');
+        }
+        button.style.pointerEvents = 'none';
+    });
+    
     displayAnswerFeedback(isCorrect, correct);
     enableNextButton();
 }
@@ -454,19 +512,6 @@ function displayAnswerFeedback(isCorrect, correctAnswer, reason = '') {
     }
 }
 
-// Lock option buttons
-function lockOptionButtons(correctAnswer, selectedBtn = null, isCorrect = false) {
-    const allButtons = document.querySelectorAll('.option-btn');
-    allButtons.forEach(button => {
-        button.style.pointerEvents = 'none';
-        if (button.dataset.value === correctAnswer) {
-            button.classList.add('correct');
-        } else if (button === selectedBtn && !isCorrect) {
-            button.classList.add('incorrect');
-        }
-    });
-}
-
 // Enable next button
 function enableNextButton() {
     const nextBtn = document.getElementById('nextQuestionBtn');
@@ -483,26 +528,13 @@ window.goToNextQuestion = function() {
     showQuestion();
 };
 
-// Show results
-function showResults() {
+// Display exercise results
+function displayExerciseResults() {
     const total = exerciseQuestions.length;
     const percentage = Math.round((exerciseScore.correct / total) * 100);
-    if (exerciseTimer) clearInterval(exerciseTimer);
     
     // Save exercise progress
     saveExerciseProgress(currentUnit.id, currentExerciseType, percentage);
-    
-    document.getElementById('exercisePage').classList.add('hidden');
-    document.getElementById('resultsPage').classList.remove('hidden');
-    
-    document.getElementById('scoreDisplay').textContent = `${exerciseScore.correct}/${total} (${percentage}%)`;
-    document.getElementById('totalQuestions').textContent = total;
-    document.getElementById('correctAnswers').textContent = exerciseScore.correct;
-    document.getElementById('wrongAnswers').textContent = exerciseScore.wrong;
-    
-    if (percentage >= 70) {
-        createFireworks();
-    }
     
     // Send to Telegram
     const telegramData = prepareTelegramData(
@@ -517,8 +549,32 @@ function showResults() {
     
     sendResultToTelegram(telegramData);
     
+    // Update display
+    document.getElementById('scoreDisplay').textContent = `${exerciseScore.correct}/${total} (${percentage}%)`;
+    document.getElementById('totalQuestions').textContent = total;
+    document.getElementById('correctAnswers').textContent = exerciseScore.correct;
+    document.getElementById('wrongAnswers').textContent = exerciseScore.wrong;
+    
+    // Celebrate if score is good
+    if (percentage >= 70) {
+        createFireworks();
+    }
+    
     // Update exercise progress display
     renderExerciseProgress();
+}
+
+// Show results
+function showResults() {
+    const total = exerciseQuestions.length;
+    if (exerciseTimer) clearInterval(exerciseTimer);
+    
+    // Save progress and send results
+    displayExerciseResults();
+    
+    // Show results page
+    document.getElementById('exercisePage').classList.add('hidden');
+    document.getElementById('resultsPage').classList.remove('hidden');
 }
 
 // Retake test
