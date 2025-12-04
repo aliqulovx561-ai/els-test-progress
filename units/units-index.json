@@ -1,0 +1,32 @@
+{
+  "totalUnits": 75,
+  "availableUnits": [
+    {
+      "id": 1,
+      "title": "The Best Recruiting Agents",
+      "file": "unit1.json",
+      "status": "available",
+      "difficulty": "beginner",
+      "grammarStructure": "Passive Voice in Past Tense",
+      "grammarExamples": [
+        "Letters such as these were circulated from kitchen to kitchen.",
+        "Young women were desperately needed for the colonies.",
+        "Advertisements were published giving details of free passages."
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Unit 2 (Coming Soon)",
+      "file": "unit2.json",
+      "status": "planned",
+      "difficulty": "beginner"
+    },
+    {
+      "id": 3,
+      "title": "Unit 3 (Coming Soon)",
+      "file": "unit3.json",
+      "status": "planned",
+      "difficulty": "intermediate"
+    }
+  ]
+}
