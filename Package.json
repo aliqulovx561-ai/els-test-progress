@@ -1,0 +1,13 @@
+{
+  "name": "els-english-through-reading",
+  "version": "1.0.0",
+  "description": "English Learning System with 75 units",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": "18.x"
+  }
+}
