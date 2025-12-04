@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELS - English Through Reading</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
+</head>
+<body data-theme="light">
+    <!-- Global Header -->
+    <header class="global-header hidden" id="globalHeader">
+        <div class="channel-links">
+            <a href="https://t.me/safarov_english" target="_blank" class="channel-link">Essay Collection</a>
+            <a href="https://t.me/cd_mock_test" target="_blank" class="channel-link">CD Mock Tests</a>
+            <a href="https://t.me/ielts_assistants" target="_blank" class="channel-link">Speaking App</a>
+            <a href="https://t.me/+p0w5LUPP_Hg5NDcy" target="_blank" class="channel-link">Other Students' Results</a>
+        </div>
+        <div class="header-controls">
+            <button class="btn btn-secondary" onclick="showProgress()">📊 Progress</button>
+            <button class="btn btn-secondary" onclick="cycleTheme()">🎨 Theme</button>
+        </div>
+    </header>
+
+    <!-- Welcome Page -->
+    <div id="welcomePage" class="welcome-page">
+        <div class="welcome-card">
+            <div class="book-icon">📚</div>
+            <h1>Welcome to ELS</h1>
+            <p class="welcome-message">
+                English Through Reading is designed to help you improve your vocabulary and reading comprehension. 
+                Study texts, learn new words through interactive flashcards, and test your knowledge with various exercises.
+            </p>
+            <form id="welcomeForm" onsubmit="enterApp(event)">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="nameInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Surname</label>
+                    <input type="text" id="surnameInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Group Name</label>
+                    <input type="text" id="groupInput" required>
+                </div>
+                <div class="datetime-display" id="datetimeDisplay"></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Enter</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Page -->
+    <div id="mainPage" class="hidden">
+        <div class="main-container">
+            <h1 style="margin-bottom: 20px; color: var(--accent-1);">ELS - English Through Reading</h1>
+            <button class="grand-test-btn" onclick="startGrandTest()">🎯 Grand Test (All Available Units)</button>
+            <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Search units by title..." oninput="filterUnits()">
+            <div class="units-grid" id="unitsGrid">
+                <!-- Units loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Unit Page -->
+    <div id="unitPage" class="hidden unit-page">
+        <div class="main-container">
+            <button class="back-button" onclick="showMainPage()">← Back to Main</button>
+            <h2 id="unitPageTitle"></h2>
+            
+            <!-- Text Reader Section -->
+            <div class="text-reader-container">
+                <h3>📖 Study the Text</h3>
+                <div class="text-content" id="textContent"></div>
+            </div>
+
+            <!-- Grammar Structure Section -->
+            <div class="grammar-container hidden" id="grammarSection">
+                <h3>🎯 Grammar Focus</h3>
+                <div class="grammar-card">
+                    <h4 id="grammarStructure"></h4>
+                    <div class="grammar-examples">
+                        <p><strong>Examples from text:</strong></p>
+                        <ol id="grammarExamplesList"></ol>
+                    </div>
+                    <div class="grammar-exercise">
+                        <p><strong>Create your own example:</strong></p>
+                        <textarea id="userGrammarExample" placeholder="Write your sentence here..." rows="3"></textarea>
+                        <button class="btn btn-primary" onclick="submitGrammarExample()" style="margin-top: 10px;">Submit</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flip Cards Section -->
+            <div class="flip-cards-container" id="flipCardsSection">
+                <h3>📇 Study Words</h3>
+                <div class="card-progress" id="cardProgress"></div>
+                <div class="flip-card-wrapper">
+                    <div class="flip-card" id="flipCard" onclick="flipCard()">
+                        <div class="flip-card-face flip-card-front">
+                            <div class="word-text" id="cardWord"></div>
+                        </div>
+                        <div class="flip-card-face flip-card-back">
+                            <h4 style="margin-bottom: 15px;">Definition:</h4>
+                            <p id="cardDefinition" style="margin-bottom: 20px; font-size: 18px;"></p>
+                            <h4 style="margin-bottom: 15px;">Translation:</h4>
+                            <p id="cardTranslation" style="font-size: 18px;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="nextCard()" style="margin-right: 10px;">Next Card</button>
+                    <button class="btn btn-secondary" onclick="previousCard()">Previous Card</button>
+                </div>
+                <div style="text-align: center; margin-top: 20px;" id="cardsCompleteButtons" class="hidden">
+                    <h3 style="margin-bottom: 20px; color: var(--success);">🎉 Great job! You've studied all words!</h3>
+                    <button class="btn btn-primary" onclick="startUnitExercises()" style="margin-right: 10px;">Go to Exercises</button>
+                    <button class="btn btn-secondary" onclick="resetCards()">Study Words Again</button>
+                </div>
+            </div>
+
+            <!-- Exercises Section -->
+            <div class="exercise-container" id="exerciseSection">
+                <h3>✍️ Exercises</h3>
+                <div class="exercise-progress-grid" id="exerciseProgressGrid">
+                    <!-- Progress buttons loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exercise Test Page -->
+    <div id="exercisePage" class="hidden unit-page">
+        <div class="main-container">
+            <button class="back-button" onclick="backToUnit()">← Back to Unit</button>
+            <div class="exercise-container">
+                <div class="progress-panel">
+                    <div class="progress-info">
+                        <span id="questionCounter">Question 1 / 10</span>
+                        <span class="timer" id="timer">30s</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="exerciseProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="question-block" id="questionBlock">
+                    <div class="question-text" id="questionText"></div>
+                    <div class="options-container" id="optionsContainer"></div>
+                    <div class="answer-feedback hidden" id="answerFeedback"></div>
+                    <div class="question-navigation">
+                        <button class="btn btn-primary" id="nextQuestionBtn" onclick="goToNextQuestion()" disabled>Next Question</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Page -->
+    <div id="resultsPage" class="hidden unit-page">
+        <div class="main-container">
+            <div class="results-container">
+                <h2>📊 Test Results</h2>
+                <div class="score-display" id="scoreDisplay"></div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalQuestions">0</div>
+                        <div class="stat-label">Total Questions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="correctAnswers" style="color: var(--success);">0</div>
+                        <div class="stat-label">Correct</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="wrongAnswers" style="color: var(--error);">0</div>
+                        <div class="stat-label">Wrong</div>
+                    </div>
+                </div>
+                <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <button class="btn btn-primary" onclick="retakeTest()">Retake Test</button>
+                    <button class="btn btn-secondary" onclick="backToUnitFromResults()">Back to Unit</button>
+                    <button class="btn btn-secondary" onclick="showMainPage()">Back to Main</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grand Test Setup Page -->
+    <div id="grandTestSetup" class="hidden unit-page">
+        <div class="main-container">
+            <button class="back-button" onclick="showMainPage()">← Back to Main</button>
+            <div class="results-container">
+                <h2>🎯 Grand Test</h2>
+                <p style="margin: 20px 0;">Select test size:</p>
+                <div class="test-size-selector">
+                    <div class="size-option" onclick="selectTestSize(30)">
+                        <div style="font-size: 24px; font-weight: bold;">30</div>
+                        <div>Mini</div>
+                    </div>
+                    <div class="size-option" onclick="selectTestSize(50)">
+                        <div style="font-size: 24px; font-weight: bold;">50</div>
+                        <div>Medium</div>
+                    </div>
+                    <div class="size-option" onclick="selectTestSize(70)">
+                        <div style="font-size: 24px; font-weight: bold;">70</div>
+                        <div>Large</div>
+                    </div>
+                    <div class="size-option" onclick="selectTestSize(100)">
+                        <div style="font-size: 24px; font-weight: bold;">100</div>
+                        <div>Extra Large</div>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 30px; width: 100%;" onclick="beginGrandTest()">Start Grand Test</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="scripts/app.js"></script>
+</body>
+</html>
